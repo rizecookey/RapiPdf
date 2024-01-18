@@ -263,13 +263,7 @@ export function objectToTree(obj, localize, prevKeyDataType = 'object', prevKey 
       return [
         {
           colSpan: 3,
-          stack: [
-            { text: `${prevKey}`, style: ['small', 'mono'] },
-            {
-              margin: [10, 0, 0, 0],
-              stack,
-            },
-          ],
+          stack,
         },
       ];
     }
