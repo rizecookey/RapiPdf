@@ -189,6 +189,7 @@ export function schemaInObjectNotation(schema, obj = {}, level = 0) {
     schema[xxxOf].map((v) => {
       if (v.type === 'object' || v.properties || v.allOf || v.anyOf || v.oneOf) {
         const partialObj = schemaInObjectNotation(v, {}, (level + 1));
+        partialObj['::description'] = v.description ? v.description : '';
         objWithAnyOfProps[`OPTION:${i}`] = partialObj;
         i++;
       } else if (v.type === 'array' || v.items) {
@@ -243,6 +244,22 @@ export function objectToTree(obj, localize, prevKeyDataType = 'object', prevKey 
       for (const k in obj[key]) {
         allOptions.push(objectToTree(obj[key][k], localize, 'object', k));
       }
+
+      const stack = [
+        { text: `${prevKey}${prevKeyDataType === 'array' ? ' [' : ''}`, style: ['small', 'mono'] },
+        {
+          margin: [10, 0, 0, 0],
+          stack: [
+            { text: `${prevKeyDataType === 'array' ? 'ARRAY WITH' : ''} ${key.replace(':', ' ')}`, style: ['sub', 'blue', 'b'], margin: [0, 5, 0, 0] },
+            ...allOptions,
+          ],
+        },
+      ];
+
+      if (prevKeyDataType === 'array') {
+        stack.push({ text: ']', style: ['small', 'mono'] });
+      }
+
       return [
         {
           colSpan: 3,
@@ -250,10 +267,7 @@ export function objectToTree(obj, localize, prevKeyDataType = 'object', prevKey 
             { text: `${prevKey}`, style: ['small', 'mono'] },
             {
               margin: [10, 0, 0, 0],
-              stack: [
-                { text: `${key.replace(':', ' ')}`, style: ['sub', 'blue', 'b'], margin: [0, 5, 0, 0] },
-                ...allOptions,
-              ],
+              stack,
             },
           ],
         },
@@ -276,7 +290,7 @@ export function objectToTree(obj, localize, prevKeyDataType = 'object', prevKey 
   let keyDef;
   if (prevKey.startsWith('OPTION:')) {
     keyDef = {
-      text: [
+      stack: [
         { text: `${prevKey.replace(':', ' ')}`, style: ['sub', 'b', 'blue'] },
         { text: `${prevKeyDataType === 'array' ? '[{' : '{'}`, style: ['small', 'mono'] },
       ],
@@ -287,16 +301,16 @@ export function objectToTree(obj, localize, prevKeyDataType = 'object', prevKey 
         { text: `${prevKey} ${prevKeyDataType === 'array' ? '[{' : '{'}`, style: ['small', 'mono'] },
       ],
     };
+  }
 
-    if (obj['::description'] || prevKeyDataType === 'array') {
-      keyDef.stack.push(
-        {
-          text: `${prevKeyDataType === 'array' ? 'Array of object: ' : ''} ${obj['::description'] ? obj['::description'] : ''}`,
-          style: ['sub', 'gray'],
-          margin: [0, 0, 0, 4],
-        },
-      );
-    }
+  if (obj['::description'] || prevKeyDataType === 'array') {
+    keyDef.stack.push(
+      {
+        text: `${prevKeyDataType === 'array' ? 'Array of object: ' : ''} ${obj['::description'] ? obj['::description'] : ''}`,
+        style: ['sub', 'gray'],
+        margin: [0, 0, 0, 4],
+      },
+    );
   }
 
   return [{
